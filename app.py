@@ -15,11 +15,11 @@ from dotenv import load_dotenv
 app = Flask(__name__)
 
 #Load pre-trained CNN model and weights
-json_file = open('cnn_model2.json', 'r')
+json_file = open('cnn_model.json', 'r')
 cnn_model_json = json_file.read()
 json_file.close()
 cnn_model = model_from_json(cnn_model_json)
-cnn_model.load_weights('cnn_model2.h5')
+cnn_model.load_weights('cnn_model.h5')
 
 #Load face detection model from OpenCV
 face_cascade = cv.CascadeClassifier('haarcascade_frontalface_default.xml')
@@ -37,7 +37,7 @@ load_dotenv()
 def gen():
         while True:
             emotion_list = []
-            reset_time = time.time() + 10 * 1
+            reset_time = time.time() + 60 * 5
             img = None
             genre = random.choice(genres)
 
