@@ -36,6 +36,7 @@ load_dotenv()
 #Generator function that will stream video frames and results to client
 def gen():
         while True:
+            #Recommend song every 5 minutes
             emotion_list = []
             reset_time = time.time() + 60 * 5
             img = None
@@ -46,9 +47,10 @@ def gen():
                 gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
                 faces = face_cascade.detectMultiScale(gray, 1.1, 4)
 
+                #Detect faces and emotions and output those with video frame
                 for (x, y, w, h) in faces:
                     cv.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                    face = img[int(y):int(y+h), int(x):int(x+w)]
+                    face = img[y:y+h, x:x+w]
                     face = cv.cvtColor(face, cv.COLOR_BGR2GRAY)
                     face = cv.resize(face, (48, 48))
 
@@ -65,7 +67,7 @@ def gen():
 
                     emotion_list.append(emotion)
 
-                    cv.putText(img, emotion, (int(x), int(y)), cv.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                    cv.putText(img, emotion, (int(x), int(y)), cv.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 2)
                     _, jpeg = cv.imencode('.jpg', img)
                     frame = jpeg.tobytes()
                     yield (b'--frame\r\n'
@@ -73,6 +75,7 @@ def gen():
             counter = Counter(emotion_list)
             emotion_final, _ = counter.most_common(1)[0]
 
+            #Determine genre based on emotion that occurs most often in time span
             if (emotion_final == 'angry' or emotion_final == 'disgust'):
                 genre = random.choice([x for x in genres if x != genre])
             elif emotion_final == 'neutral':
@@ -80,9 +83,11 @@ def gen():
             elif (emotion_final == 'fear' or emotion_final == 'sad'):
                 genre = 'blues'
 
+            #Call spotipy api to retrieve recommended song
             spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
             response = spotify.search(q='genre:' + genre, type='track', market='US', offset=0, limit=1)
 
+            #Parse resonse to get song title and artist
             song = response['tracks']['items'][0]['name']
             artists = ''
             for i in response['tracks']['items'][0]['artists']:
@@ -90,6 +95,7 @@ def gen():
             artists = artists[:-2]
             message = song + ' by ' + artists
 
+            #Display recommended song and artist for short period of time in frame
             reset_time = time.time() + 20
             while (time.time() < reset_time):
                 _, img = cap.read()   
